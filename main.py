@@ -1,5 +1,6 @@
 #from math import trunc
 #from numpy.lib.utils import who
+from cmath import sin
 import pyautogui as bot
 import time
 from datetime import datetime
@@ -20,6 +21,16 @@ import hashlib,binascii
 import configparser as cf
 #from songline import Sendline
 
+def configErr():
+    print("There was a problem with the configuration file.\nPlease check your \"config.ini\" file.")
+    os.system("pause")
+    sys.exit()
+
+config = cf.ConfigParser()
+try:
+    config.read_file(codecs.open("config.ini", "r", "utf8"))
+except:
+    configErr()
 
 class Sline():
     def __init__(self,token):
@@ -94,8 +105,6 @@ class cap():
         return self.screen
 
     def click(self):
-        
-        
         box = (self.root.winfo_x(),self.root.winfo_y(),self.root.winfo_width(),self.root.winfo_height())
         self.screen.append(box)
         print(box)
@@ -121,6 +130,11 @@ class cap():
 
 HWID = subprocess.check_output('wmic csproduct get uuid').decode().split('\n')[1].strip()
 
+
+
+
+
+'''
 file = codecs.open('lineToken.txt','r','utf8')
 token = ''
 try:
@@ -130,17 +144,22 @@ except:
 if(len(token) != 43):
     token = ''
 file.close()
+'''
 
-SONGLINE = False
-try:
-    if(len(token) == 43):
-        LINE = Sline(token)
-        SONGLINE = True
-except:
-    pass
+
+
 
 def CK():
     key = ''
+
+    try:
+        key = config.get('activate','KEY')
+    except:
+        print('Failed to read key')
+        os.system("pause")
+        sys.exit()
+
+    '''
     try:
         file = codecs.open('key.txt','r','utf8')
         key = file.readline()
@@ -148,7 +167,9 @@ def CK():
         print('Failed to read key')
         sys.exit()
     file.close()
-    
+    '''
+
+
     salt = b'1334#bomb_byWGT'
     hwid = bytes(HWID, 'utf-8')
     key = bytes(key, 'utf-8')
@@ -177,9 +198,10 @@ file_handler.setLevel(logging.DEBUG)
 file_handler_format = '%(asctime)s | %(levelname)s | %(lineno)d: %(message)s'
 file_handler.setFormatter(logging.Formatter(file_handler_format))
 logger.addHandler(file_handler)
-file = codecs.open('config.txt','r','utf8')
-
+#file = codecs.open('config.txt','r','utf8')
+'''
 logger.debug('loading config... ')
+
 i = 0
 configchecklist = ['mouseMoveSpeed','refreshMap','looplimit','delayMainloop','loginlimit','confidence','numOfAcc','zoom']
 config = []
@@ -209,11 +231,46 @@ loginlimit = int(config[4]) #เวลา(วินาที) ที่จะร
 confidence = config[5]
 numOfAcc = int(config[6])
 zoom = int(config[7])
+'''
+logger.debug('loading config... ')
+SONGLINE = False
+try:
+    #advance
+    looplimit = config.getint('advance','MaxFind') #จำนวนรอบสูงสุดที่ระบบจะวนหาปุ่มในกรณีที่หาปุ่มไม่เจอ
+    delayMainloop = config.getint('advance','LoopDelay') #หน่วงเวลาในการวนตรวจสอบหน้าจอ ถ้าใส่ค่า 0 คือ จะวนเร็วสุดเท่าที่ทำได้ แต่ถ้าใส่ค่าอื่น เช่น 2 ก็คือจะวนช้าลงจากเดิม 2 วินาที 
+    confidence = config.getfloat('advance','Confidence')
+
+    #general
+    token = config.get('general','LineToken')
+    if(len(token) != 43):
+        token = ''
+    if(len(token) == 43):
+        LINE = Sline(token)
+        SONGLINE = True
+    mouseMoveSpeed = 0 #ความเร็วการเคลื่อนเม้า ปรับน้อยเร็ว ปรับมากช้า !แนะนำที่ 0.3!
+    refreshMap = config.getint('general','RefreshMap')
+    numOfAcc = config.getint('general','NumofAccount')
+    loginlimit = config.getint('general','LoginTimeLimit') #เวลา(วินาที) ที่จะรอหลอดโหลดเข้าเกม หากโหลดนานกว่าที่กำหนดไว้ จะรีหน้าแล้วล็อกอินใหม่
+    timetowakeup = []
+    if(config.getboolean('general','MutiCooldownMode')):
+        cooldownAll = config.get('general','CooldownAll').split(',')
+        for i in range(numOfAcc):
+            timetowakeup.append(int(cooldownAll[i]))
+    else:
+        for i in range(numOfAcc):
+            timetowakeup.append(config.getint('general','Cooldown'))
+
+    
+
+    zoom = config.get('general','Zoom')
+except:
+    configErr()
 
 
-character = []
-timetowakeup = []
 
+#character = []
+
+'''
 file = codecs.open('config_acc.txt','r','utf8')
 logger.debug('loading account config... ')
 IDconfigCheckList = ['character','timetowakeup']
@@ -247,7 +304,7 @@ file.close()
 if(i+1 < (3*numOfAcc)):
     logger.error('!! ERROR !! please check config_acc.txt')
     quit()
-
+'''
 
 #print(character)
 #print(timetowakeup)
@@ -414,12 +471,10 @@ class bombBot():
             #pos = bot.locateOnScreen(f'{self.mainpicPath}/login/connect.png',region=self.screensize,confidence=self.confidence)
             logger.debug(f'[{self.accNum}] connect {pos}')
             self.moveAndClik(pos)
-            '''bot.moveTo(pos)
-            bot.click(pos)'''
             time.sleep(1)
-            solCap = self.antibotDetect()
+            '''solCap = self.antibotDetect()
             if(not(solCap)):
-                return False
+                return False'''
 
             #login แบบเก่า 
             '''
@@ -435,12 +490,18 @@ class bombBot():
                     bot.moveTo(pos)
                     bot.click(pos)
             '''
-            time.sleep(3)
+            #time.sleep(3)
             pos = bot.locateOnScreen(f'pic/all/metamask_load.png',confidence=self.confidence)
-            while(pos):
-                time.sleep(0.5)
+            sign = bot.locateOnScreen(f'{self.mainpicPath}/login/auth.png',confidence=self.confidence)
+            if(not(sign)):
+                sign = bot.locateOnScreen(f'{self.mainpicPath}/login/autheng.png',confidence=self.confidence)
+            while(pos or not(sign)):
+                time.sleep(0.3)
                 logger.debug(f'[{self.accNum}] metamask is loading')
                 pos = bot.locateOnScreen(f'pic/all/metamask_load.png',confidence=self.confidence)
+                sign = bot.locateOnScreen(f'{self.mainpicPath}/login/auth.png',confidence=self.confidence)
+                if(not(sign)):
+                    sign = bot.locateOnScreen(f'{self.mainpicPath}/login/autheng.png',confidence=self.confidence)
                 
             time.sleep(0.5)
             pos = bot.locateOnScreen(f'{self.mainpicPath}/login/auth.png',confidence=self.confidence)
@@ -702,6 +763,12 @@ class bombBot():
         
 
     def F5_(self):
+        pos = bot.locateOnScreen(f'{self.mainpicPath}/login/autheng.png',confidence=self.confidence)
+        if(not(pos)):
+            pos = bot.locateOnScreen(f'{self.mainpicPath}/login/auth.png',confidence=self.confidence)
+        if(pos):
+            self.moveAndClik(pos)
+            time.sleep(0.3)
         pos = self.mp
         self.moveAndClik(pos)
         '''bot.moveTo(pos,duration=self.moveSpeed)
@@ -779,7 +846,7 @@ for i in range(numOfAcc):
     mybot.append(bombBot())
 
 for i in range(numOfAcc):
-    mybot[i].character = character[i]
+    #mybot[i].character = character[i]
     mybot[i].timetowakeup = timetowakeup[i]
     mybot[i].moveSpeed = mouseMoveSpeed
     mybot[i].looplimit = looplimit
